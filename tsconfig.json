@@ -1,0 +1,11 @@
+{
+  "extends": "@adonisjs/tsconfig/tsconfig.app.json",
+  "compilerOptions": {
+    "rootDir": "./",
+    "outDir": "./build",
+    "noImplicitAny": false,
+    "noFallthroughCasesInSwitch": false,
+    "lib": ["ES2020", "DOM"]
+  },
+  "exclude": ["./node_modules", "./node_modules/**/*"]
+}
