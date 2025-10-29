@@ -25,61 +25,67 @@ export default class EmailQueueProvider {
    * The process has been started
    */
   async ready() {
-    const connection = redis.connection().ioConnection.options;
+    // Get Adonis Redis connection options
+    const redisOptions = redis.connection().ioConnection.options
 
-    const emailsQueue = new Queue('emails', { connection });
+    // Clone and ensure maxRetriesPerRequest is null
+    const connection = {
+      ...redisOptions,
+      maxRetriesPerRequest: null, // 👈 This line fixes the BullMQ warning
+    }
 
-    mail.setMessenger(mailer => {
+    const emailsQueue = new Queue('emails', { connection })
+
+    mail.setMessenger((mailer) => {
       return {
         async queue(mailMessage, config) {
           await emailsQueue.add('send_email', {
             mailMessage,
             config,
             mailerName: mailer.name,
-          });
+          })
         },
-      };
-    });
+      }
+    })
 
     const worker = new Worker(
       emailsQueue.name,
-      async job => {
+      async (job) => {
         if (job.name === 'send_email') {
-          const { mailMessage, config, mailerName } = job.data;
-
-          await mail.use(mailerName).sendCompiled(mailMessage, config);
+          const { mailMessage, config, mailerName } = job.data
+          await mail.use(mailerName).sendCompiled(mailMessage, config)
         }
       },
       {
         connection,
-      },
-    );
+      }
+    )
 
-    worker.on('completed', job => {
-      console.log(`${job.id} has completed!`);
-    });
+    worker.on('completed', (job) => {
+      console.log(`${job.id} has completed!`)
+    })
 
     worker.on('failed', (job, err) => {
-      console.log(`${job?.id} has failed with ${err.message}`);
-    });
+      console.log(`${job?.id} has failed with ${err.message}`)
+    })
 
-    const queueEvents = new QueueEvents('emails', { connection });
+    const queueEvents = new QueueEvents('emails', { connection })
 
     queueEvents.on('waiting', ({ jobId }) => {
-      console.log(`A job with ID ${jobId} is waiting`);
-    });
+      console.log(`A job with ID ${jobId} is waiting`)
+    })
 
     queueEvents.on('active', ({ jobId, prev }) => {
-      console.log(`Job ${jobId} is now active; previous status was ${prev}`);
-    });
+      console.log(`Job ${jobId} is now active; previous status was ${prev}`)
+    })
 
     queueEvents.on('completed', ({ jobId, returnvalue }) => {
-      console.log(`${jobId} has completed and returned ${returnvalue}`);
-    });
+      console.log(`${jobId} has completed and returned ${returnvalue}`)
+    })
 
     queueEvents.on('failed', ({ jobId, failedReason }) => {
-      console.log(`${jobId} has failed with reason ${failedReason}`);
-    });
+      console.log(`${jobId} has failed with reason ${failedReason}`)
+    })
   }
 
   /**
