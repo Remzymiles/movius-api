@@ -6,6 +6,7 @@ import { BaseController } from '../../../base/base.controller.js'
 import { UserService } from './user_service.js'
 import { changePasswordValidator } from './validators/changePasswordValidator.js'
 import { updateUserValidation } from './validators/updateUserValidation.js'
+import BadRequestException from '#exceptions/bad_request_exception'
 
 @inject()
 export default class UserController extends BaseController {
@@ -17,13 +18,22 @@ export default class UserController extends BaseController {
   }
 
   public async update() {
-    const file = this.ctx.request.file('profile_pic')
+    const file = this.ctx.request.file('profile_pic', {
+      size: '5mb',
+      extnames: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+    })
+
+    if (file && !file.isValid) {
+      throw new BadRequestException(
+        `Invalid file: ${file.errors.map((error) => error.message).join(', ')}`
+      )
+    }
 
     const data = await this.ctx.request.validateUsing(updateUserValidation)
 
-    const updatedUser = await this.userService.update(data, file as MultipartFile)
+    const updatedUser = await this.userService.update(data, file as MultipartFile | undefined)
 
-    return this.transformResponse('user profile updated', updatedUser, HttpStatus.CREATED)
+    return this.transformResponse('User profile updated successfully', updatedUser, HttpStatus.OK)
   }
 
   public async getAuthenticatedUser() {

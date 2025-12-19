@@ -23,12 +23,25 @@ export class UserService {
     const user = this.ctx.auth.user as User
 
     if (profilePic) {
-      try {
-        const uploadedFile = await this.cloudinaryService.uploadFile(profilePic)
+      if (!profilePic.isValid) {
+        throw new BadRequestException('Invalid file provided')
+      }
 
+      try {
+        if (user.avatar_url) {
+          const oldPublicId = this.extractPublicIdFromUrl(user.avatar_url)
+          if (oldPublicId) {
+            await this.cloudinaryService.deleteFile(oldPublicId)
+          }
+        }
+
+        const uploadedFile = await this.cloudinaryService.uploadFile(profilePic)
         user.avatar_url = uploadedFile.secure_url
+
+        logger.info(`Profile picture uploaded successfully: ${uploadedFile.secure_url}`)
       } catch (e) {
-        logger.info(e)
+        logger.error('Failed to upload profile picture:', e)
+        throw new BadRequestException('Failed to upload profile picture. Please try again.')
       }
     }
 
@@ -43,36 +56,51 @@ export class UserService {
     return user.toJSON()
   }
 
+  private extractPublicIdFromUrl(url: string): string | null {
+    try {
+      const parts = url.split('/')
+      const folderAndFile = parts.slice(-2)
+      const filename = folderAndFile[1].split('.')[0]
+      return `${folderAndFile[0]}/${filename}`
+    } catch (e) {
+      logger.error('Failed to extract public_id from URL:', e)
+      return null
+    }
+  }
+
   public async deleteAccount() {
     const user = this.ctx.auth.user as User
-    // cleanup account
 
-    // delete account
+    if (user.avatar_url) {
+      try {
+        const publicId = this.extractPublicIdFromUrl(user.avatar_url)
+        if (publicId) {
+          await this.cloudinaryService.deleteFile(publicId)
+        }
+      } catch (e) {
+        logger.error('Failed to delete profile picture during account deletion:', e)
+      }
+    }
+
     await user.delete()
 
     await mail.sendLater(new DeleteAccountNotification(user.email, user.full_name))
   }
+
   public async changePassword(data: Infer<typeof changePasswordValidator>) {
     const user = this.ctx.auth.getUserOrFail()
 
-    // check old password
     const isValid = await hash.verify(user.password, data.old_password)
 
-     if (!isValid) {
+    if (!isValid) {
       throw new ForbiddenException('Old password is incorrect')
     }
 
-    // Check if new password matches the current hashed password
     const isNewPasswordSameAsOld = await hash.verify(user.password, data.password)
     if (isNewPasswordSameAsOld) {
       throw new BadRequestException('New password cannot be the same as the old password')
     }
 
-    console.log(isNewPasswordSameAsOld)
-
-   
-
-    // update password
     user.password = data.password
     await user.save()
 
