@@ -104,4 +104,13 @@ export default await Env.create(new URL('../', import.meta.url), {
   FIREBASE_CREDENTIALS_BASE64: Env.schema.string.optional(),
   FIREBASE_CREDENTIALS_JSON: Env.schema.string.optional(),
   FIREBASE_CREDENTIALS_PATH: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for configuring Cloudinary
+  |----------------------------------------------------------
+  */
+  CLOUDINARY_CLOUD_NAME: Env.schema.string(),
+  CLOUDINARY_API_KEY: Env.schema.string(),
+  CLOUDINARY_API_SECRET: Env.schema.string(),
 })
