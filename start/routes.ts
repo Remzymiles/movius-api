@@ -11,19 +11,19 @@ import router from '@adonisjs/core/services/router'
 import { UserDeleteRequestController } from '../app/modules/auth/user-delete-request/user_delete_request.controller.js'
 import { middleware } from './kernel.js'
 
+const MovieRecognitionController = () =>
+  import('../app/modules/movie-recognition/movie_recognition.controller.js')
 const RegistersController = () => import('../app/modules/auth/register/register_controller.js')
 const LoginController = () => import('../app/modules/auth/login/login_controller.js')
 const PasswordResetController = () =>
   import('../app/modules/auth/password-reset/password_reset.controller.js')
 const UserController = () => import('../app/modules/auth/user/user_controller.js')
 
-
 router.get('/', async () => {
   return {
     hello: 'world',
   }
 })
-
 
 // AUTH routes
 router
@@ -97,3 +97,12 @@ router
       .prefix('/user-delete-request')
   })
   .prefix('/auth')
+
+// Movie Recognition routes
+router
+  .group(() => {
+    router.post('/text', [MovieRecognitionController, 'recognizeFromText'])
+    router.post('/image', [MovieRecognitionController, 'recognizeFromImage'])
+    router.post('/video', [MovieRecognitionController, 'recognizeFromVideo'])
+  })
+  .prefix('/api/movie-recognition')

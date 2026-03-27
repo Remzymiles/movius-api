@@ -98,6 +98,23 @@ export default await Env.create(new URL('../', import.meta.url), {
 
   /*
   |----------------------------------------------------------
+  | Variables for configuring xAI (Grok)
+  |----------------------------------------------------------
+  */
+  XAI_API_KEY: Env.schema.string(),
+  GROK_MODEL: Env.schema.string(),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for configuring Cloudinary
+  |----------------------------------------------------------
+  */
+  CLOUDINARY_CLOUD_NAME: Env.schema.string(),
+  CLOUDINARY_API_KEY: Env.schema.string(),
+  CLOUDINARY_API_SECRET: Env.schema.string(),
+
+  /*
+  |----------------------------------------------------------
   | Variables for configuring Firebase Admin credentials
   |----------------------------------------------------------
   */
